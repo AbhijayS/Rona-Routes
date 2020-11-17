@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html>
-<link href='https://fonts.googleapis.com/css?family=Poppins' rel='stylesheet'>
 
 <head>
   <title>Simple Map</title>
+
+  <link href='https://fonts.googleapis.com/css?family=Poppins' rel='stylesheet'>
+  <script src='https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js'></script>
+  <link href='https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css' rel='stylesheet' />
 
   <style>
     * {
@@ -46,11 +49,11 @@
         <div>
           <span>To</span>
           <input type="text" id="to-input" class="search-input"
-            style="border-top: none; border-left: none; border-right: none; border-bottom: solid black; border-width: thin; background-color: #F9EDED;">
+            style="border-width: thin; background-color: #F9EDED;">
           <br>
           <span>From</span>
           <input type="text" id="from-input" class="search-input"
-            style="border-top: none; border-left: none; border-right: none; border-bottom: solid black; border-width: thin; background-color: #F9EDED;">
+            style="border-width: thin; background-color: #F9EDED;">
         </div>
         <button style="border: none; background-color: #F9EDED;" id="search-button" class="button">
           <svg width="39" height="40" viewBox="0 0 39 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -107,8 +110,7 @@
       </button>
     </div>
     <div style="flex: 1;" id="right-panel">
-      <iframe id="map" frameborder="0" style="border:0" src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBL9NTTKS00sKbEbtS5n8fy6X0MRY0bw10
-        &q=Space+Needle,Seattle+WA" allowfullscreen>
+      <div id="map"></div>
       </iframe>
     </div>
   </div>
