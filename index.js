@@ -1,3 +1,26 @@
+/*
+walking
+-------
+type of destination
+duration of walking
+county
+"walk"
+
+car
+---
+type
+county
+"car"
+
+heatmap
+-------
+
+
+suggested routes
+
+*/
+
+
 var carButton = document.getElementById("car-button");
 var walkButton = document.getElementById("walk-button");
 var transport = carButton;
@@ -32,11 +55,12 @@ var fromSearch = places({
 toSearch.on('change', e => {
   toLngLat = [e.suggestion.latlng.lng, e.suggestion.latlng.lat];
   toCounty = e.suggestion.county;
-  map.flyTo({center: [toLngLat[0], toLngLat[1]], zoom: 9});
+  map.flyTo({ center: [toLngLat[0], toLngLat[1]], zoom: 9 });
+
 });
 fromSearch.on('change', e => {
   fromLngLat = [e.suggestion.latlng.lng, e.suggestion.latlng.lat]
-  map.flyTo({center: [fromLngLat[0], fromLngLat[1]], zoom: 9});
+  map.flyTo({ center: [fromLngLat[0], fromLngLat[1]], zoom: 9 });
 });
 
 /* MapBox */
@@ -66,10 +90,20 @@ map.on('load', () => {
           addRoute();
         }
         addRoute();
+        map.on('sourcedata', doneRoute);
       }
     }
-    map.on('sourcedata', doneStartPoint);
+
+    function doneRoute() {
+      if (map.getSource('route') && map.isSourceLoaded('route')) {
+        updateEstimates();
+        map.off('sourcedata', doneRoute);
+      }
+    }
+
     addStartPoint();
+    map.on('sourcedata', doneStartPoint);
+    map.fitBounds([toLngLat, fromLngLat], { padding: 20 });
   }
 });
 
@@ -140,7 +174,7 @@ function addEndPoint() {
 
 
 function addRoute() {
-  var url = 'https://api.mapbox.com/directions/v5/mapbox/' + (transport==carButton?'driving/':'walking/') + fromLngLat[0] + ',' + fromLngLat[1] + ';' + toLngLat[0] + ',' + toLngLat[1] + '?steps=true&geometries=geojson&access_token=' + mapboxgl.accessToken;
+  var url = 'https://api.mapbox.com/directions/v5/mapbox/' + (transport == carButton ? 'driving/' : 'walking/') + fromLngLat[0] + ',' + fromLngLat[1] + ';' + toLngLat[0] + ',' + toLngLat[1] + '?steps=true&geometries=geojson&access_token=' + mapboxgl.accessToken;
   // Add directions
   // make an XHR request https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
   var req = new XMLHttpRequest();
@@ -189,25 +223,54 @@ function addRoute() {
     }
   };
   req.send();
-
-  function doneRoute() {
-    if (map.getSource('route') && map.isSourceLoaded('route')) {
-      updateEstimates();
-      map.off('sourcedata', doneRoute);
-    }
-  }
-  map.on('sourcedata', doneRoute);
-
-  map.fitBounds([toLngLat, fromLngLat], {padding: 20});
-
 }
 
 function updateEstimates() {
-  // request rating
-  console.log(allRoutes);
   var duration = allRoutes.routes[0].duration;
-  routeDurationEl.innerText = (Math.floor(duration/3600)!=0?`${Math.floor(allRoutes.routes[0].duration/3600)} h ` : '') + `${Math.floor(((allRoutes.routes[0].duration/3600) - Math.floor(allRoutes.routes[0].duration/3600))*60)} m`;
-  var arrival = new Date(Date.now() + duration*1000);
+  var arrival = new Date(Date.now() + duration * 1000);
   var now = new Date();
-  routeArrivalEl.innerText = (arrival.getDate()!=now.getDate())?arrival.toLocaleString():arrival.toLocaleTimeString();
+
+  // request place type
+  fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${toLngLat[0]},${toLngLat[1]}.json?types=poi&access_token=${mapboxgl.accessToken}`)
+    .then(res => res.json())
+    .then(data => {
+      var ratingRequest = {
+        county: toCounty,
+        type: data.features[0].properties.category.split(',')[0].trim(),
+        duration: duration,
+        mode: transport==carButton?"car":"walk"
+      };
+
+      fetch(`127.0.0.1:8000/rating/`, {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(ratingRequest)
+      })
+      .then(res=>res.json())
+      .then(rating => {
+        routeRatingEl.innerText = rating;
+        console.log(applyColor(rating));
+        routeRatingEl.style.color = applyColor(rating);
+      })
+    });
+
+  // travel duration
+  // display format
+  routeDurationEl.innerText = (Math.floor(duration / 3600) != 0 ? `${Math.floor(allRoutes.routes[0].duration / 3600)} h ` : '') + `${Math.floor(((allRoutes.routes[0].duration / 3600) - Math.floor(allRoutes.routes[0].duration / 3600)) * 60)} m`;
+
+  // traval arrival
+  routeArrivalEl.innerText = (arrival.getDate() != now.getDate()) ? arrival.toLocaleString() : arrival.toLocaleTimeString();
+}
+
+function applyColor(value) {
+  value = Math.floor(value);
+  switch(value) {
+    case 1: return "#ACB334"
+    case 2: return "#FAB733"
+    case 3: return "#FF8E15"
+    case 4: return "#FF4E11"
+    case 5: return "#FF0D0D"
+    default: return "black"
+  }
 }
