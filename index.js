@@ -45,22 +45,28 @@ carButton.onclick = () => {
 var toSearch = places({
   appId: 'plOI9A6ZZG8E',
   apiKey: 'c06e6514463c64853edb7dcfd882d774',
-  container: document.querySelector('#to-input')
+  container: document.querySelector('#to-input'),
+  aroundLatLng: '30.285358101094687, -97.73564712031731'
 })
+
 var fromSearch = places({
   appId: 'plOI9A6ZZG8E',
   apiKey: 'c06e6514463c64853edb7dcfd882d774',
-  container: document.querySelector('#from-input')
+  container: document.querySelector('#from-input'),
+  aroundLatLng: '30.285358101094687, -97.73564712031731'
 })
+
 toSearch.on('change', e => {
   toLngLat = [e.suggestion.latlng.lng, e.suggestion.latlng.lat];
   toCounty = e.suggestion.county;
-  map.flyTo({ center: [toLngLat[0], toLngLat[1]], zoom: 9 });
-
+  map.flyTo({ center: [toLngLat[0], toLngLat[1]], zoom: 12 });
+  addEndPoint();
 });
+
 fromSearch.on('change', e => {
   fromLngLat = [e.suggestion.latlng.lng, e.suggestion.latlng.lat]
-  map.flyTo({ center: [fromLngLat[0], fromLngLat[1]], zoom: 9 });
+  map.flyTo({ center: [fromLngLat[0], fromLngLat[1]], zoom: 12 });
+  addStartPoint();
 });
 
 /* MapBox */
@@ -69,7 +75,7 @@ var map = new mapboxgl.Map({
   container: 'map',
   style: 'mapbox://styles/mapbox/streets-v11',
   center: [-97.73564712031731, 30.285358101094687],
-  zoom: 10
+  zoom: 12
 });
 
 map.on('load', () => {
@@ -86,18 +92,19 @@ map.on('load', () => {
       if (map.getLayer('end') && map.isSourceLoaded('end')) {
         map.off('sourcedata', doneEndPoint);
         // add directions   
-        if (!map.getLayer('route')) {
-          addRoute();
+        if (!map.getLayer('0')) {
+          addRoutes();
         }
-        addRoute();
+        addRoutes();
         map.on('sourcedata', doneRoute);
       }
     }
 
     function doneRoute() {
-      if (map.getSource('route') && map.isSourceLoaded('route')) {
-        updateEstimates();
+      if (map.getSource('0') && map.isSourceLoaded('0')) {
         map.off('sourcedata', doneRoute);
+	      makePrimary('0');
+	      console.log('done loading routes');
       }
     }
 
@@ -173,8 +180,8 @@ function addEndPoint() {
 }
 
 
-function addRoute() {
-  var url = 'https://api.mapbox.com/directions/v5/mapbox/' + (transport == carButton ? 'driving/' : 'walking/') + fromLngLat[0] + ',' + fromLngLat[1] + ';' + toLngLat[0] + ',' + toLngLat[1] + '?steps=true&geometries=geojson&access_token=' + mapboxgl.accessToken;
+function addRoutes() {
+  var url = 'https://api.mapbox.com/directions/v5/mapbox/' + (transport == carButton ? 'driving/' : 'walking/') + fromLngLat[0] + ',' + fromLngLat[1] + ';' + toLngLat[0] + ',' + toLngLat[1] + '?alternatives=true&geometries=geojson&access_token=' + mapboxgl.accessToken;
   // Add directions
   // make an XHR request https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
   var req = new XMLHttpRequest();
@@ -182,51 +189,62 @@ function addRoute() {
   req.onload = function () {
     var json = JSON.parse(req.response);
     allRoutes = json;
-    var data = json.routes[0];
-    var route = data.geometry.coordinates;
-    var geojson = {
-      type: 'Feature',
-      properties: {},
-      geometry: {
-        type: 'LineString',
-        coordinates: route
-      }
-    };
+	  allRoutes.routes.map((r, index) => {
+		  var data = {
+			  type: 'Feature',
+			  properties: {},
+			  geometry: r.geometry
+		  };
+		  addMapboxRouteLayer(data, index);
+	  });
+  };
+  req.send();
+}
+
+const primaryColor = '#3887be';
+const secondaryColor = '#8a8a8a';
+
+function addMapboxRouteLayer(geojsonData, ordinal, primary=false) {
+	var routeID = ''+ordinal;
+	console.log(routeID + ' Loading');
     // if the route already exists on the map, reset it using setData
-    if (map.getSource('route')) {
-      map.getSource('route').setData(geojson);
+    if (map.getSource(routeID)) {
+      map.getSource(routeID).setData(geojsonData);
     } else { // otherwise, make a new request
       map.addLayer({
-        id: 'route',
+        id: routeID,
         type: 'line',
         source: {
           type: 'geojson',
-          data: {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-              type: 'LineString',
-              coordinates: geojson
-            }
-          }
-        },
+          data: geojsonData
+	},
         layout: {
           'line-join': 'round',
           'line-cap': 'round'
         },
         paint: {
-          'line-color': '#3887be',
+          'line-color': primary?primaryColor:secondaryColor,
           'line-width': 5,
           'line-opacity': 0.75
         }
       });
     }
-  };
-  req.send();
+	map.on('click', routeID, e => {
+		console.log(routeID + ' clicked');
+		makePrimary(routeID);
+	});
 }
 
-function updateEstimates() {
-  var duration = allRoutes.routes[0].duration;
+function makePrimary(routeID) {
+	map.setPaintProperty('0', 'line-color', secondaryColor);
+	map.setPaintProperty('1', 'line-color', secondaryColor);
+	map.setPaintProperty('2', 'line-color', secondaryColor);
+	map.setPaintProperty(routeID, 'line-color', primaryColor);
+	updateEstimates(routeID);
+}
+
+function updateEstimates(routeID) {
+  var duration = allRoutes.routes[parseInt(routeID)].duration;
   var arrival = new Date(Date.now() + duration * 1000);
   var now = new Date();
 
@@ -238,7 +256,7 @@ function updateEstimates() {
         county: toCounty,
         type: data.features[0].properties.category.split(',')[0].trim(),
         duration: duration,
-        mode: transport==carButton?"car":"walk"
+        mode: transport == carButton ? "car" : "walk"
       };
 
       fetch(`127.0.0.1:8000/rating/`, {
@@ -247,12 +265,12 @@ function updateEstimates() {
         },
         body: JSON.stringify(ratingRequest)
       })
-      .then(res=>res.json())
-      .then(rating => {
-        routeRatingEl.innerText = rating;
-        console.log(applyColor(rating));
-        routeRatingEl.style.color = applyColor(rating);
-      })
+        .then(res => res.json())
+        .then(rating => {
+          routeRatingEl.innerText = rating;
+          console.log(applyColor(rating));
+          routeRatingEl.style.color = applyColor(rating);
+        })
     });
 
   // travel duration
@@ -265,7 +283,7 @@ function updateEstimates() {
 
 function applyColor(value) {
   value = Math.floor(value);
-  switch(value) {
+  switch (value) {
     case 1: return "#ACB334"
     case 2: return "#FAB733"
     case 3: return "#FF8E15"
