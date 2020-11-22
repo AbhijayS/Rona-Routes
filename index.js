@@ -79,6 +79,25 @@ var map = new mapboxgl.Map({
 });
 
 map.on('load', () => {
+  // add heatmap layer for testing
+  // map.addSource('counties', {
+  //   type: 'geojson',
+  //   data: './earthquakes.geojson'
+  // });
+
+  // map.addLayer({
+  //   id: 'counties-heat',
+  //   type: 'heatmap',
+  //   source: 'counties',
+  //   maxzoom: 15,
+  //   paint: {
+  //     'heatmap-weight': {
+  //       property: 'mag',
+  //       type: 'linear'
+  //     }
+  //   }
+  // })
+
   searchButton.onclick = () => {
     function doneStartPoint() {
       if (map.getLayer('start') && map.isSourceLoaded('start')) {
@@ -103,8 +122,8 @@ map.on('load', () => {
     function doneRoute() {
       if (map.getSource('0') && map.isSourceLoaded('0')) {
         map.off('sourcedata', doneRoute);
-	      makePrimary('0');
-	      console.log('done loading routes');
+        makePrimary('0');
+        console.log('done loading routes');
       }
     }
 
@@ -189,14 +208,14 @@ function addRoutes() {
   req.onload = function () {
     var json = JSON.parse(req.response);
     allRoutes = json;
-	  allRoutes.routes.map((r, index) => {
-		  var data = {
-			  type: 'Feature',
-			  properties: {},
-			  geometry: r.geometry
-		  };
-		  addMapboxRouteLayer(data, index);
-	  });
+    allRoutes.routes.map((r, index) => {
+      var data = {
+        type: 'Feature',
+        properties: {},
+        geometry: r.geometry
+      };
+      addMapboxRouteLayer(data, index);
+    });
   };
   req.send();
 }
@@ -204,43 +223,43 @@ function addRoutes() {
 const primaryColor = '#3887be';
 const secondaryColor = '#8a8a8a';
 
-function addMapboxRouteLayer(geojsonData, ordinal, primary=false) {
-	var routeID = ''+ordinal;
-	console.log(routeID + ' Loading');
-    // if the route already exists on the map, reset it using setData
-    if (map.getSource(routeID)) {
-      map.getSource(routeID).setData(geojsonData);
-    } else { // otherwise, make a new request
-      map.addLayer({
-        id: routeID,
-        type: 'line',
-        source: {
-          type: 'geojson',
-          data: geojsonData
-	},
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round'
-        },
-        paint: {
-          'line-color': primary?primaryColor:secondaryColor,
-          'line-width': 5,
-          'line-opacity': 0.75
-        }
-      });
-    }
-	map.on('click', routeID, e => {
-		console.log(routeID + ' clicked');
-		makePrimary(routeID);
-	});
+function addMapboxRouteLayer(geojsonData, ordinal, primary = false) {
+  var routeID = '' + ordinal;
+  console.log(routeID + ' Loading');
+  // if the route already exists on the map, reset it using setData
+  if (map.getSource(routeID)) {
+    map.getSource(routeID).setData(geojsonData);
+  } else { // otherwise, make a new request
+    map.addLayer({
+      id: routeID,
+      type: 'line',
+      source: {
+        type: 'geojson',
+        data: geojsonData
+      },
+      layout: {
+        'line-join': 'round',
+        'line-cap': 'round'
+      },
+      paint: {
+        'line-color': primary ? primaryColor : secondaryColor,
+        'line-width': 5,
+        'line-opacity': 0.75
+      }
+    });
+  }
+  map.on('click', routeID, e => {
+    console.log(routeID + ' clicked');
+    makePrimary(routeID);
+  });
 }
 
 function makePrimary(routeID) {
-	map.setPaintProperty('0', 'line-color', secondaryColor);
-	map.setPaintProperty('1', 'line-color', secondaryColor);
-	map.setPaintProperty('2', 'line-color', secondaryColor);
-	map.setPaintProperty(routeID, 'line-color', primaryColor);
-	updateEstimates(routeID);
+  map.setPaintProperty('0', 'line-color', secondaryColor);
+  map.setPaintProperty('1', 'line-color', secondaryColor);
+  map.setPaintProperty('2', 'line-color', secondaryColor);
+  map.setPaintProperty(routeID, 'line-color', primaryColor);
+  updateEstimates(routeID);
 }
 
 function updateEstimates(routeID) {
