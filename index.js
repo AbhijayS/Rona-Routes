@@ -30,6 +30,8 @@ var routeRatingEl = document.getElementById("route-rating");
 var routeDurationEl = document.getElementById("route-duration");
 var routeArrivalEl = document.getElementById("route-arrival");
 var heatMapLayers = [];
+var heatmapButton = document.getElementById('heatmap-button');
+var heatmap = false;
 
 walkButton.onclick = () => {
   walkButton.querySelector("path").setAttribute("fill", "black");
@@ -80,133 +82,47 @@ var map = new mapboxgl.Map({
 });
 
 map.on('load', () => {
-  // add heatmap layer for testing
-  // map.addSource('counties', {
-  //   type: 'geojson',
-  //   data: './earthquakes.geojson'
-  // });
 
-  // map.addLayer({
-  //   id: 'counties-heat',
-  //   type: 'heatmap',
-  //   source: 'counties',
-  //   maxzoom: 15,
-  //   paint: {
-  //     'heatmap-weight': {
-  //       property: 'mag',
-  //       type: 'linear'
-  //     }
-  //   }
-  // })
-  var countiesGeoJSONURL = 'http://localhost:8080/US_Counties.json';
-  var countiesRatingsURL = 'http://localhost:8080/Counties_Heatmap_Ratings.json'
+  var countiesGeoJSONURL = 'http://localhost:8080/US_Counties_Ratings.json';
 
-  // counties pre-calculated ratings
-  fetch(countiesRatingsURL)
+  fetch(countiesGeoJSONURL)
     .then(res => res.json())
-    .then(countiesRatingsJSON => {
-      console.log(countiesRatingsJSON);
-      // counties geojson data
-      fetch(countiesGeoJSONURL)
-        .then(res => res.json())
-        .then(countiesGeoJSON => {
-          console.log(countiesGeoJSON);
-          for (const countyGeoJSONFeature of countiesGeoJSON.features) {
-            // var countyRatingObj = countiesRatingsJSON.find(ratingObj => ratingObj.county == countyGeoJSONFeature.properties.NAME + ' County');
-            // if (countyRatingObj) {
-              map.addSource(countyGeoJSONFeature.properties.GEO_ID, {
-                type: 'geojson',
-                data: countyGeoJSONFeature
-              });
+    .then(countiesGeoJSON => {
+      map.addSource('heatmap-source', {
+        type: 'geojson',
+        data: countiesGeoJSON
+      });
 
-            //   heatMapLayers.push({
-            //     county: countyGeoJSONFeature.properties.NAME,
-            //     source: countyGeoJSONFeature.properties.GEO_ID
-            //   });
+      map.addLayer({
+        id: 'heatmap-layer',
+        source: 'heatmap-source',
+        type: 'fill',
+        paint: {
+          'fill-color': ['case',
+            ['==', ['to-number', ['get', 'RATING']], 1], '#69B34C',
+            ['==', ['to-number', ['get', 'RATING']], 2], '#FAB733',
+            ['==', ['to-number', ['get', 'RATING']], 3], '#FF8E15',
+            ['==', ['to-number', ['get', 'RATING']], 4], '#FF4E11',
+            ['==', ['to-number', ['get', 'RATING']], 5], '#FF0D0D',
+            '#69B34C'
+          ],
+          'fill-opacity': 0.8
+        },
+        layout: {
+          visibility: 'none'
+        }
+      });
 
-            //   // for testing
-              map.addLayer({
-                id: countyGeoJSONFeature.properties.GEO_ID + "-heat",
-                type: 'fill',
-                source: countyGeoJSONFeature.properties.GEO_ID,
-                layout: {},
-                paint: {
-                  'fill-color': '#088',
-                  'fill-opacity': 0.8
-                }
-              })
-            // }
-          }
-          console.log("Done");
-        })
-        .catch(e => console.error("Error loading US Counties GeoJSON.", e));
-    })
-    .catch(e => console.error("Error loading Counties Ratings.", e));
-
-
-  /*
-  fetch(countiesJSONURL)
-    .then(res => res.json())
-    .then(async (countiesData) => {
-      await Promise.all(
-        countiesData.features.map(mapboxSourceObject => {
-          // making rating request
-          var ratingColor;
-          var ratingsURL = "http://localhost:8080/countyheatmapdata.json";
-          return fetch(ratingsURL)
-            .then(res => res.json())
-            .then(allRatings => {
-              var county = allRatings.find(r => r['county'] == mapboxSourceObject.properties.NAME + ' County');
-              ratingColor = applyColor(county['rating']);
-              // create then append layer
-              var mapboxLayer = {
-                id: mapboxSourceObject.properties.NAME,
-                type: 'fill',
-                source: mapboxSourceObject,
-                layout: {},
-                paint: {
-                  'fill-color': ratingColor,
-                  'fill-opacity': 0.8
-                }
-              };
-              heatMapLayers.push(mapboxLayer);
-            })
-            .catch(() => {
-              console.error('Ratings response error.');
-              ratingColor = applyColor(1);
-              map.addSource(mapboxSourceObject.properties.NAME, mapboxSourceObject);
-              var mapboxLayer = {
-                id: mapboxSourceObject.properties.NAME,
-                type: 'fill',
-                source: mapboxSourceObject.properties.NAME,
-                layout: {},
-                paint: {
-                  'fill-color': ratingColor,
-                  'fill-opacity': 0.8
-                }
-              };
-              heatMapLayers.push(mapboxLayer);
-            })
-        })
-      );
-      // setup heatmap button
-      console.log(heatMapLayers);
-
-      // for testing
-      map.addLayer(heatMapLayers[0]);
+      heatmapButton.removeAttribute('hidden');
+      heatmapButton.onclick = () => {
+        heatmap = !heatmap;
+        if (heatmap) {
+          map.setLayoutProperty('heatmap-layer', 'visibility', 'visible');
+        } else {
+          map.setLayoutProperty('heatmap-layer', 'visibility', 'none');          
+        }
+      }
     });
-
-  // map.addSource('poly', poly);
-  // map.addLayer({
-  //   id: 'poly-layer',
-  //   type: 'fill',
-  //   source: 'poly',
-  //   'paint': {
-  //     'fill-color': '#088',
-  //     'fill-opacity': 0.8
-  //   }
-  // });
-  */
 
   searchButton.onclick = () => {
     function doneStartPoint() {
