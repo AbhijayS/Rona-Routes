@@ -98,8 +98,53 @@ map.on('load', () => {
   //     }
   //   }
   // })
+  var countiesGeoJSONURL = 'http://localhost:8080/US_Counties.json';
+  var countiesRatingsURL = 'http://localhost:8080/Counties_Heatmap_Ratings.json'
 
-  var countiesJSONURL = 'http://localhost:8080/US_Counties.json';
+  // counties pre-calculated ratings
+  fetch(countiesRatingsURL)
+    .then(res => res.json())
+    .then(countiesRatingsJSON => {
+      console.log(countiesRatingsJSON);
+      // counties geojson data
+      fetch(countiesGeoJSONURL)
+        .then(res => res.json())
+        .then(countiesGeoJSON => {
+          console.log(countiesGeoJSON);
+          for (const countyGeoJSONFeature of countiesGeoJSON.features) {
+            // var countyRatingObj = countiesRatingsJSON.find(ratingObj => ratingObj.county == countyGeoJSONFeature.properties.NAME + ' County');
+            // if (countyRatingObj) {
+              map.addSource(countyGeoJSONFeature.properties.GEO_ID, {
+                type: 'geojson',
+                data: countyGeoJSONFeature
+              });
+
+            //   heatMapLayers.push({
+            //     county: countyGeoJSONFeature.properties.NAME,
+            //     source: countyGeoJSONFeature.properties.GEO_ID
+            //   });
+
+            //   // for testing
+              map.addLayer({
+                id: countyGeoJSONFeature.properties.GEO_ID + "-heat",
+                type: 'fill',
+                source: countyGeoJSONFeature.properties.GEO_ID,
+                layout: {},
+                paint: {
+                  'fill-color': '#088',
+                  'fill-opacity': 0.8
+                }
+              })
+            // }
+          }
+          console.log("Done");
+        })
+        .catch(e => console.error("Error loading US Counties GeoJSON.", e));
+    })
+    .catch(e => console.error("Error loading Counties Ratings.", e));
+
+
+  /*
   fetch(countiesJSONURL)
     .then(res => res.json())
     .then(async (countiesData) => {
@@ -161,6 +206,7 @@ map.on('load', () => {
   //     'fill-opacity': 0.8
   //   }
   // });
+  */
 
   searchButton.onclick = () => {
     function doneStartPoint() {
