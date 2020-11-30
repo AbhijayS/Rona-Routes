@@ -63,7 +63,10 @@ def scoreRoute(county, locType, transport, travelTime):
     if(transport == "car"):
         return scoreLoc(county, getFirstType(locType))
     else:
-        return scoreLoc(county, getFirstType(locType)) + 0.2
+        return scoreLoc(county, getFirstType(locType)) + 0.2 * scaleTravelTime(travelTime)
 
 def getFirstType(locType):
     return locType.split(',')[0]
+
+def scaleTravelTime(travelTime):
+    return travelTime/1800
