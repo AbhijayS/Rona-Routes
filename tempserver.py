@@ -1,3 +1,7 @@
+# runs on PORT 8080
+# this is just so we can test the site on some server
+# this is replaced by github's hosting service for production
+
 #!/usr/bin/env python3
 from http.server import HTTPServer, SimpleHTTPRequestHandler, test
 import sys
