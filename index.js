@@ -304,14 +304,12 @@ function updateEstimates(routeID) {
         mode: transport == carButton ? "car" : "walk"
       };
 
-      fetch(`127.0.0.1:8000/rating/`, {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(ratingRequest)
-      })
-        .then(res => res.json())
+      var ratingsURL = 'http://localhost:8081/';
+
+      fetch(`${ratingsURL}${ratingRequest.county},${ratingRequest.type},${ratingRequest.mode}`)
+        .then(res => res.text())
         .then(rating => {
+          rating = parseFloat(rating)*5;
           routeRatingEl.innerText = rating;
           console.log(applyColor(rating));
           routeRatingEl.style.color = applyColor(rating);

@@ -1,4 +1,5 @@
 # this is very dirty but it works so we'll use it ;)
+# runs on PORT 8081
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import unquote
@@ -8,6 +9,7 @@ class S(BaseHTTPRequestHandler):
     def _set_response(self):
         self.send_response(200)
         self.send_header('Content-Type', 'text/html')
+        self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
     
     def do_GET(self):
@@ -20,11 +22,7 @@ class S(BaseHTTPRequestHandler):
         category = path_vars[1].strip()
         transport = path_vars[2].strip()
 
-        # county = 'Hays County'
-        # category = 'pharmacy'
-        # transport = 'car'
-
-        print("county:|{}|, category:|{}|, transport:|{}|".format(county, category, transport))
+        print("county: |{}|, category: |{}|, transport: |{}|".format(county, category, transport))
 
         try:
             score =  Score.scoreRoute(county, category, transport)
