@@ -298,6 +298,8 @@ function updateEstimates(routeID) {
   fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${toLngLat[0]},${toLngLat[1]}.json?types=poi&access_token=${mapboxgl.accessToken}`)
     .then(res => res.json())
     .then(data => {
+      console.log(data);
+
       var ratingRequest = {
         county: toCounty,
         type: data.features[0].properties.category.split(',')[0].trim(),
@@ -305,12 +307,15 @@ function updateEstimates(routeID) {
         mode: transport == carButton ? "car" : "walk"
       };
 
+      console.log(ratingRequest);
+
       var ratingsURL = 'http://192.168.1.250:8081/';
 
-      fetch(`${ratingsURL}${ratingRequest.county},${ratingRequest.type},${ratingRequest.mode}`)
+      fetch(`${ratingsURL}${ratingRequest.county},${ratingRequest.type},${ratingRequest.mode},${ratingRequest.duration}`)
         .then(res => res.text())
         .then(rating => {
-          rating = parseFloat(rating) * 5;
+          console.log(rating);
+          rating = (parseFloat(rating) * 5).toFixed();
           routeRatingEl.innerText = rating + ' / 5.0';
           routeRatingEl.style.color = applyColor(rating);
         })

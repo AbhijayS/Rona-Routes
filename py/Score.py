@@ -59,7 +59,7 @@ def scoreLoc(county, locType):
     #(cases/pop) * locatiopn weight(1-5) * level of people there(1-5)
     return getLocScaledScore((countyToCov.get(county) / countyToPop.get(county)) * locWeights.get(locType) * 1)
 
-def scoreRoute(county, locType, transport, travelTime):
+def scoreRoute(county, locType, transport, travelTime=0):
     if(transport == "car"):
         return scoreLoc(county, getFirstType(locType))
     else:

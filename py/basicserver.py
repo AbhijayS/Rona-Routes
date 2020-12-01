@@ -18,14 +18,15 @@ class S(BaseHTTPRequestHandler):
         # self.wfile.write("GET request for {}".format(self.path).encode('utf-8'))
         path = unquote(self.path[1:])
         path_vars = path.split(',')
-        county = path_vars[0].strip()
-        category = path_vars[1].strip()
-        transport = path_vars[2].strip()
+        county = path_vars[0]
+        category = path_vars[1]
+        transport = path_vars[2]
+        duration = path_vars[3]
 
-        print("county: |{}|, category: |{}|, transport: |{}|".format(county, category, transport))
+        print("county: |{}|, category: |{}|, transport: |{}|, duration: |{}|".format(county, category, transport, duration))
 
         try:
-            score =  Score.scoreRoute(county, category, transport)
+            score =  Score.scoreRoute(county=county, locType=category, transport=transport, duration=duration)
         except:
             print("County, category, or transport not found.")
             score = 0
