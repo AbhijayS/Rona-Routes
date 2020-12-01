@@ -309,7 +309,7 @@ function updateEstimates(routeID) {
 
       console.log(ratingRequest);
 
-      var ratingsURL = 'http://192.168.1.250:8081/';
+      var ratingsURL = 'https://3c2d325b12f4.ngrok.io/';
 
       fetch(`${ratingsURL}${ratingRequest.county},${ratingRequest.type},${ratingRequest.mode},${ratingRequest.duration}`)
         .then(res => res.text())
