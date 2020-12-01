@@ -32,6 +32,7 @@ var routeArrivalEl = document.getElementById("route-arrival");
 var heatMapLayers = [];
 var heatmapButton = document.getElementById('heatmap-button');
 var heatmap = false;
+var endPoint = new mapboxgl.Marker();
 
 walkButton.onclick = () => {
   walkButton.querySelector("path").setAttribute("fill", "black");
@@ -83,7 +84,83 @@ var map = new mapboxgl.Map({
 
 map.on('load', () => {
 
-  var countiesGeoJSONURL = 'http://localhost:8080/US_Counties_Ratings.json';
+  var countiesGeoJSONURL = 'https://raw.githubusercontent.com/AbhijayS/Rona-Routes/main/US_Counties_Ratings.json';
+
+  map.addLayer({
+    id: '0',
+    type: 'line',
+    source: {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [-97.73564712031731, 30.285358101094687]
+        }
+      }
+    },
+    layout: {
+      'line-join': 'round',
+      'line-cap': 'round',
+      'visibility': 'none'
+    },
+    paint: {
+      'line-color': secondaryColor,
+      'line-width': 5,
+      'line-opacity': 0.75
+    }
+  });
+
+  map.addLayer({
+    id: '1',
+    type: 'line',
+    source: {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [-97.73564712031731, 30.285358101094687]
+        }
+      }
+    },
+    layout: {
+      'line-join': 'round',
+      'line-cap': 'round',
+      'visibility': 'none'
+    },
+    paint: {
+      'line-color': secondaryColor,
+      'line-width': 5,
+      'line-opacity': 0.75
+    }
+  });
+
+  map.addLayer({
+    id: '2',
+    type: 'line',
+    source: {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [-97.73564712031731, 30.285358101094687]
+        }
+      }
+    },
+    layout: {
+      'line-join': 'round',
+      'line-cap': 'round',
+      'visibility': 'none'
+    },
+    paint: {
+      'line-color': secondaryColor,
+      'line-width': 5,
+      'line-opacity': 0.75
+    }
+  });
+
 
   fetch(countiesGeoJSONURL)
     .then(res => res.json())
@@ -119,59 +196,31 @@ map.on('load', () => {
         if (heatmap) {
           map.setLayoutProperty('heatmap-layer', 'visibility', 'visible');
         } else {
-          map.setLayoutProperty('heatmap-layer', 'visibility', 'none');          
+          map.setLayoutProperty('heatmap-layer', 'visibility', 'none');
         }
       }
     });
 
   searchButton.onclick = () => {
-    function doneStartPoint() {
-      if (map.getLayer('start') && map.isSourceLoaded('start')) {
-        map.off('sourcedata', doneStartPoint);
-        // add end point
-        map.on('sourcedata', doneEndPoint);
-        addEndPoint();
-      }
-    }
-    function doneEndPoint() {
-      if (map.getLayer('end') && map.isSourceLoaded('end')) {
-        map.off('sourcedata', doneEndPoint);
-        // add directions   
-        if (!map.getLayer('0')) {
-          addRoutes();
-        }
-        addRoutes();
-        map.on('sourcedata', doneRoute);
-      }
-    }
-
-    function doneRoute() {
-      if (map.getSource('0') && map.isSourceLoaded('0')) {
-        map.off('sourcedata', doneRoute);
-        makePrimary('0');
-        console.log('done loading routes');
-      }
-    }
-
     addStartPoint();
-    map.on('sourcedata', doneStartPoint);
+    addEndPoint();
+    addRoutes();
     map.fitBounds([toLngLat, fromLngLat], { padding: 20 });
+    // map.on('sourcedata', doneStartPoint);
   }
+
+  
 });
 
 // Add starting point to the map
 function addStartPoint() {
   var startData = {
-    type: 'FeatureCollection',
-    features: [{
-      type: 'Feature',
-      properties: {},
-      geometry: {
-        type: 'Point',
-        coordinates: fromLngLat
-      }
+    type: 'Feature',
+    properties: {},
+    geometry: {
+      type: 'Point',
+      coordinates: fromLngLat
     }
-    ]
   };
   if (map.getLayer('start')) {
     map.getSource('start').setData(startData)
@@ -194,91 +243,43 @@ function addStartPoint() {
 
 // Add end point
 function addEndPoint() {
-  var endData = {
-    type: 'FeatureCollection',
-    features: [{
-      type: 'Feature',
-      properties: {},
-      geometry: {
-        type: 'Point',
-        coordinates: toLngLat
-      }
-    }
-    ]
-  };
-  if (map.getLayer('end')) {
-    map.getSource('end').setData(endData);
-  } else {
-    map.addLayer({
-      id: 'end',
-      type: 'circle',
-      source: {
-        type: 'geojson',
-        data: endData
-      },
-      paint: {
-        'circle-radius': 10,
-        'circle-color': '#f30'
-      }
-    });
-  }
+  endPoint.setLngLat(toLngLat);
+  endPoint.addTo(map);
 }
 
-
 function addRoutes() {
+  map.setLayoutProperty('0', 'visibility', 'none');
+  map.setLayoutProperty('1', 'visibility', 'none');
+  map.setLayoutProperty('2', 'visibility', 'none');
+
   var url = 'https://api.mapbox.com/directions/v5/mapbox/' + (transport == carButton ? 'driving/' : 'walking/') + fromLngLat[0] + ',' + fromLngLat[1] + ';' + toLngLat[0] + ',' + toLngLat[1] + '?alternatives=true&geometries=geojson&access_token=' + mapboxgl.accessToken;
-  // Add directions
-  // make an XHR request https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
   var req = new XMLHttpRequest();
+  
   req.open('GET', url, true);
   req.onload = function () {
-    var json = JSON.parse(req.response);
-    allRoutes = json;
+    allRoutes = JSON.parse(req.response);
+
     allRoutes.routes.map((r, index) => {
-      var data = {
+      map.setLayoutProperty(''+index, 'visibility', 'visible');
+      map.getSource(''+index).setData({
         type: 'Feature',
         properties: {},
         geometry: r.geometry
-      };
-      addMapboxRouteLayer(data, index);
+      });
+
+      map.on('click', ''+index, () => {
+        makePrimary(''+index);
+      });
     });
+    
+    makePrimary('0');
+    
   };
   req.send();
 }
 
 const primaryColor = '#3887be';
 const secondaryColor = '#8a8a8a';
-
-function addMapboxRouteLayer(geojsonData, ordinal, primary = false) {
-  var routeID = '' + ordinal;
-  console.log(routeID + ' Loading');
-  // if the route already exists on the map, reset it using setData
-  if (map.getSource(routeID)) {
-    map.getSource(routeID).setData(geojsonData);
-  } else { // otherwise, make a new request
-    map.addLayer({
-      id: routeID,
-      type: 'line',
-      source: {
-        type: 'geojson',
-        data: geojsonData
-      },
-      layout: {
-        'line-join': 'round',
-        'line-cap': 'round'
-      },
-      paint: {
-        'line-color': primary ? primaryColor : secondaryColor,
-        'line-width': 5,
-        'line-opacity': 0.75
-      }
-    });
-  }
-  map.on('click', routeID, e => {
-    console.log(routeID + ' clicked');
-    makePrimary(routeID);
-  });
-}
 
 function makePrimary(routeID) {
   map.setPaintProperty('0', 'line-color', secondaryColor);
@@ -304,14 +305,13 @@ function updateEstimates(routeID) {
         mode: transport == carButton ? "car" : "walk"
       };
 
-      var ratingsURL = 'http://localhost:8081/';
+      var ratingsURL = 'http://192.168.1.250:8081/';
 
       fetch(`${ratingsURL}${ratingRequest.county},${ratingRequest.type},${ratingRequest.mode}`)
         .then(res => res.text())
         .then(rating => {
-          rating = parseFloat(rating)*5;
-          routeRatingEl.innerText = rating;
-          console.log(applyColor(rating));
+          rating = parseFloat(rating) * 5;
+          routeRatingEl.innerText = rating + ' / 5.0';
           routeRatingEl.style.color = applyColor(rating);
         })
     });
