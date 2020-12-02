@@ -57,13 +57,13 @@ def setupData():
 
 def scoreLoc(county, locType):
     #(cases/pop) * locatiopn weight(1-5) * level of people there(1-5)
-    return getLocScaledScore((countyToCov.get(county) / countyToPop.get(county)) * locWeights.get(locType) * 1)
+    return getLocScaledScore((countyToCov.get(county) / countyToPop.get(county)) * locWeights.get(locType) * 15)
 
 def scoreRoute(county, locType, transport, travelTime=0):
     if(transport == "car"):
         return scoreLoc(county, getFirstType(locType))
     else:
-        return scoreLoc(county, getFirstType(locType)) + 0.2 * scaleTravelTime(travelTime)
+        return scoreLoc(county, getFirstType(locType)) + 0.5 * scaleTravelTime(travelTime)
 
 def getFirstType(locType):
     return locType.split(',')[0]
