@@ -316,7 +316,7 @@ function updateEstimates(routeID) {
         .then(rating => {
           console.log(rating);
           rating = (parseFloat(rating) * 5).toFixed();
-          routeRatingEl.innerText = rating + ' / 5.0';
+          routeRatingEl.innerHTML = rating + ' / 5.0' + ' Not Risky &#x1F603';
           routeRatingEl.style.color = applyColor(rating);
         })
     });
