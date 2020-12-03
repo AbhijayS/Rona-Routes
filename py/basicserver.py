@@ -26,9 +26,11 @@ class S(BaseHTTPRequestHandler):
         print("county: |{}|, category: |{}|, transport: |{}|, duration: |{}|".format(county, category, transport, duration))
 
         try:
-            score =  Score.scoreRoute(county=county, locType=category, transport=transport, duration=duration)
-        except:
+            print("trying")
+            score =  Score.scoreRoute(county=county, locType=category, transport=transport, travelTime=float(duration))
+        except Exception as e:
             print("County, category, or transport not found.")
+            print(e)
             score = 0
         
         self.wfile.write(str(score).encode('UTF-8'))
